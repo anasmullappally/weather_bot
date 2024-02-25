@@ -1,0 +1,21 @@
+<div class="d-flex flex-column justify-content-center align-items-center mt-3">
+    <div class="weather-bot">
+        <h3>WELCOME TO WEATHER BOT MANAGEMENT</h3>
+        <div class="start-button text-center d-flex justify-content-center align-items-center mt-5">
+            {{#if isBotRunning}}
+            <!-- If bot is running, show stop button -->
+            <button id="botButton" class="btn btn-danger" onclick="stopBOT()">STOP BOT</button>
+            {{else}}
+            <!-- If bot is not running, show start button -->
+            <button id="botButton" class="btn btn-success" onclick="startBOT()">START BOT</button>
+            {{/if}}
+        </div>
+    </div>
+    <div class="manage-api mt-3">
+        <button class="btn btn-primary" onclick="redirectToApi()"> MANAGE API KEYS</button>
+    </div>
+    <div class="manage-users mt-3">
+        <button class="btn btn-primary"> MANAGE USERS</button>
+    </div>
+</div>
+</div>

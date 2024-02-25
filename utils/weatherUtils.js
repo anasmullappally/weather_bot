@@ -15,8 +15,7 @@ export const isValidCountry = (countryName) => {
 };
 
 // Function to check if a city exists
-export const isCityExists = async (city) => {
-    const apiKey = process.env.WEATHER_TOKEN
+export const isCityExists = async (city, apiKey) => {
     const apiUrl = `http://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}`;
 
     try {
@@ -32,11 +31,10 @@ export const capitalizeFirstLetterOfEachWord = (str) => {
     return str.replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export const getWeatherDetails = async (city) => {
-    if (!city) {
+export const getWeatherDetails = async (city, apiKey) => {
+    if (!city || !apiKey) {
         return null
     }
-    const apiKey = process.env.WEATHER_TOKEN
     const apiUrl = `http://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}`;
 
     try {

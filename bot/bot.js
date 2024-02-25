@@ -3,9 +3,18 @@ import TelegramBot from "node-telegram-bot-api";
 import { User } from "../model/User.js";
 import { capitalizeFirstLetterOfEachWord, getWeatherDetails, isCityExists, isValidCountry } from "../utils/weatherUtils.js";
 
-export const startBot = () => {
-    const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+let bot
+export let isBotRunning = false;
 
+
+export const startBotPolling = (telegramKey, weatherKey) => {
+    if (!telegramKey) {
+        throw new Error("telegram bot key is not there")
+    }
+    if (!weatherKey) {
+        throw new Error("weather Key  is not there")
+    }
+    bot = new TelegramBot(telegramKey, { polling: true });
     const userStates = new Map(); // Map to store user states
 
     bot.onText(/\/start/, async (msg) => {
@@ -53,7 +62,7 @@ export const startBot = () => {
 
                 case "awaitingCity":
                     // User is expected to provide their city
-                    const isCityValid = await isCityExists(msg.text);
+                    const isCityValid = await isCityExists(msg.text, weatherKey);
                     if (!isCityValid) {
                         //if the city is not valid
                         bot.sendMessage(chatId, 'Sorry, the entered city does not exist. Please provide a valid city.');
@@ -72,7 +81,7 @@ export const startBot = () => {
                     userStates.delete(userId); // End the conversation by removing user state
 
                     // Send the current weather update
-                    const weatherDetails = await getWeatherDetails(newUser.city);
+                    const weatherDetails = await getWeatherDetails(newUser.city, weatherKey);
                     if (weatherDetails) {
                         // Convert temperature from Kelvin to Celsius
                         const temperatureCelsius = weatherDetails.main.temp - 273.15;
@@ -99,6 +108,17 @@ export const startBot = () => {
             bot.sendMessage(chatId, "This Bot exclusively accepts text messages.")
         }
     });
+    isBotRunning = true;
+
 };
 
 
+export const stopBotPolling = () => {
+    if (bot) {
+        bot.stopPolling();
+        isBotRunning = false;
+        return "bot stopped"
+    } else {
+        return "bot is not running"
+    }
+}

@@ -1,0 +1,24 @@
+<div class="api-keys-list-wrapper d-flex flex-column justify-content-center align-items-center mt-5">
+    <div class="api-key d-flex flex-column mb-5">
+        <div class="form-outline mb-2">
+            <label class="form-label">Bot API</label>
+            <input id="botApi" type="text" class="form-control" value="{{ botAPI.key }}" {{#unless botAPI.key}} {{else}}
+                disabled {{/unless}} />
+
+        </div>
+        <div class="form-outline mb-2">
+            <label class="form-label">Weather API</label>
+            <input id="weatherApi" type="text" class="form-control" value="{{ weatherAPI.key }}" {{#unless
+                weatherAPI.key}} {{else}} disabled {{/unless}} />
+        </div>
+        {{#if botAPI.key}}
+        <button class="btn btn-sm btn-secondary ml-3" onclick="toggleEdit('botApi', 'weatherApi')">Edit</button>
+        {{else}}
+        <button class="btn btn-sm btn-primary ml-3" onclick="addAPIKeys(['botApi', 'weatherApi'])">Add</button>
+        {{/if}}
+    </div>
+
+    <div class="mt-5">
+        <button class="btn btn-primary" onclick="redirectToHome()">Back to Home Page</button>
+    </div>
+</div>
