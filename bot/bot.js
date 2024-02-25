@@ -1,6 +1,7 @@
 // bot.js
 import TelegramBot from "node-telegram-bot-api";
 import { User } from "../model/User.js";
+import { capitalizeFirstLetterOfEachWord, getWeatherDetails, isCityExists, isValidCountry } from "../utils/weatherUtils.js";
 
 export const startBot = () => {
     const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
@@ -28,46 +29,76 @@ export const startBot = () => {
     bot.on('message', async (msg) => {
         const chatId = msg.chat.id;
         const userId = msg.from.id;
-        // const userName = msg.from.first_name;
 
         // Check user's state
-        const currentUser = userStates.get(userId);
+        if (msg.text) {
+            const currentUser = userStates.get(userId);
+            switch (currentUser?.status) {
+                case "awaitingName":
+                    // User is expected to provide their name
+                    userStates.set(userId, { ...currentUser, status: "awaitingCountry", name: msg.text }); // Transition to the next state
+                    bot.sendMessage(chatId, `Awesome ${msg.text}! What country are you from?`);
+                    break;
 
-        switch (currentUser?.status) {
-            case 'awaitingName':
-                // User is expected to provide their name
-                userStates.set(userId, { ...currentUser, status: 'awaitingCity', name: msg.text }); // Transition to the next state
-                bot.sendMessage(chatId, `Great, ${msg.text}! What city are you from?`);
-                break;
+                case "awaitingCountry":
+                    // User is expected to provide their country
+                    if (!isValidCountry(msg.text)) {
+                        // if the country is not valid
+                        bot.sendMessage(chatId, `Oops! There is no country named ${msg.text}. Please enter a valid country.`);
+                        break;
+                    }
+                    userStates.set(userId, { ...currentUser, status: "awaitingCity", country: msg.text }); // Transition to the next state
+                    bot.sendMessage(chatId, `Great, ${currentUser.name}! What city are you from?`);
+                    break;
 
-            case 'awaitingCity':
-                // User is expected to provide their city
-                userStates.set(userId, { ...currentUser, status: 'awaitingCountry', city: msg.text }); // Transition to the next state
-                // currentUser.city = msg.text; // Store city in the user state
-                bot.sendMessage(chatId, `Awesome! What country are you from?`);
-                break;
+                case "awaitingCity":
+                    // User is expected to provide their city
+                    const isCityValid = await isCityExists(msg.text);
+                    if (!isCityValid) {
+                        //if the city is not valid
+                        bot.sendMessage(chatId, 'Sorry, the entered city does not exist. Please provide a valid city.');
+                        break;
+                    }
 
-            case 'awaitingCountry':
-                // User is expected to provide their country
-                console.log(currentUser, "current user");
-                bot.sendMessage(chatId, `Thank you! Your information has been saved.`);
+                    bot.sendMessage(chatId, `Thank you! Your information has been saved.`);
+                    const newUser = new User({
+                        userId,
+                        name: currentUser.name.toLowerCase(),
+                        country: currentUser.country.toLowerCase(),
+                        city: msg.text.toLowerCase(),
+                    });
 
-                // const userData = userStates.get(userId);
-                // Save user information to MongoDB
-                // const newUser = new User({
-                //     userId,
-                //     name: userData.name,
-                //     city: userData.city, // Retrieve city from user state
-                //     country: msg.text,
-                // });
+                    await newUser.save();
+                    userStates.delete(userId); // End the conversation by removing user state
 
-                // await newUser.save();
-                // userStates.delete(userId); // End the conversation by removing user state
-                break;
+                    // Send the current weather update
+                    const weatherDetails = await getWeatherDetails(newUser.city);
+                    if (weatherDetails) {
+                        // Convert temperature from Kelvin to Celsius
+                        const temperatureCelsius = weatherDetails.main.temp - 273.15;
 
-            default:
-                // Handle unexpected state or user-specific logic
-                break;
+                        // Extract additional relevant information from weatherDetails
+                        const humidity = weatherDetails.main.humidity;
+                        const windSpeed = weatherDetails.wind.speed;
+                        const pressure = weatherDetails.main.pressure;
+
+                        // Extract weather description
+                        const weatherDescription = weatherDetails.weather[0].description;
+
+                        // Send a message with more details
+                        bot.sendMessage(chatId,
+                            `Here's the current weather in ${newUser.city}:\nTemperature: ${temperatureCelsius.toFixed(2)}°C\nDescription: ${weatherDescription} \nHumidity: ${humidity}%\nWind Speed: ${windSpeed} m/s\nAtmospheric Pressure: ${pressure} hPa`
+                        );
+                    }
+                    break;
+                default:
+                    // Handle unexpected state or user-specific logic
+                    break;
+            }
+        } else {
+            bot.sendMessage(chatId, "This Bot exclusively accepts text messages.")
         }
     });
 };
+
+
