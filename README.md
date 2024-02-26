@@ -297,9 +297,10 @@ Toggles the block status of a user.
   "userId" : 1,
   "action" :"block"
   }
-  **Response:**
   ```
-- Status Code: `200 OK`
+
+**Response:**
+  - Status Code: `200 OK`
   - Body:
     ```json
     { "message": "User blocked/unblocked successfully." }
