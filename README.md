@@ -196,7 +196,7 @@ Adds new API keys for Telegram bot and Weather and set the message frequency.
     "weatherApi": "your_weather_api_key",
     "frequency": 60
   }
-  **Response:**
+**Response:**
   ```
 - Status Code: `200 OK`
   - Body:
