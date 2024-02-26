@@ -184,20 +184,21 @@ Renders the API page of the WeatherBot admin interface.
 Adds new API keys for Telegram bot and Weather and set the message frequency.
 
 **Request:**
-
-- Method: `POST`
-- URL: `/api`
-- Headers:
+ - Method: `POST`
+ - URL: `/api`
+ - Headers:
   - Content-Type: application/json
-- Body:
+ - Body:
   ```json
   {
     "botApi": "your_telegram_api_key",
     "weatherApi": "your_weather_api_key",
     "frequency": 60
   }
-**Response:**
+
   ```
+**Response:**
+
 - Status Code: `200 OK`
   - Body:
     ```json
