@@ -5,7 +5,7 @@ import { dirname } from 'path';
 import path from 'path';
 import adminRouter from './routes/admin.js';
 import { connectDB } from './config/database.js';
-import dotenv from "dotenv"
+import dotenv from 'dotenv'
 import { APINotFound } from './utils/api-not-found.js';
 
 dotenv.config()
@@ -17,7 +17,7 @@ const port = process.env.port || 3000;
 // Create an instance of express-handlebars
 const hbs = expHbs.create({
     extname: '.hbs',
-    defaultLayout: 'main',  // Assuming your main template is named 'main.hbs'
+    defaultLayout: 'main',
     layoutsDir: path.join(__dirname, 'views', 'layouts'),
     partialsDir: path.join(__dirname, 'views', 'partials')
 })
@@ -35,8 +35,11 @@ app.use(express.json());
 
 
 
-app.use("/", adminRouter)
+app.use('/', adminRouter)
 app.use(APINotFound)
+
+
+
 // Start the server
 app.listen(port, async () => {
     console.log(`Server is running at http://localhost:${port}`);

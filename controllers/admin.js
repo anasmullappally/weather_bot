@@ -1,92 +1,88 @@
-import { isBotRunning, startBotPolling, stopBotPolling } from "../bot/bot.js";
-import { ApiKey } from "../model/ApiKeys.js";
+import { isBotRunning, startBotPolling, stopBotPolling } from '../bot/bot.js';
+import { ApiKey } from '../model/ApiKeys.js';
+import { User } from '../model/User.js';
 
-export const home = async (req, res) => {
+export const getHome = async (req, res) => {
     try {
-        return res.render('home', { pageTitle: 'Home', isBotRunning });
+        return res.status(200).render('home', { pageTitle: 'Home', isBotRunning });
     } catch (error) {
-        return res.render('server-error', { pageTitle: 'server error' });
+        return res.status(500).render('server-error', { pageTitle: 'Internal Server Error' });
     }
 }
-
 
 export const startBot = async (req, res) => {
     try {
-        const botApi = await ApiKey.findOne({ service: "telegram" })
-        const weatherApi = await ApiKey.findOne({ service: "weather" })
+        const apiKey = await ApiKey.findOne({ type: "api-key" });
 
-        if (!botApi) {
-            return res.status(400).json({ message: 'Please add the Bot API key before starting.' });
+        if (!apiKey) {
+            return res.status(400).json({ message: 'Please add the necessary API key before proceeding.' });
         }
 
-        if (!weatherApi) {
-            return res.status(400).json({ message: 'Please add the Weather API key before starting.' });
-        }
+        await startBotPolling(apiKey.telegram, apiKey.weather, apiKey.frequency);
 
-        // If both keys are present, proceed with your logic
-        console.log('Starting the bot...', botApi.key, weatherApi.key);
-        // Your additional logic here
-        startBotPolling(botApi.key, weatherApi.key)
-        // Send a success response if everything is okay
-        return res.status(200).json({ message: "Bot started successfully" });
+        return res.status(200).json({ message: 'Bot started successfully.' });
+
     } catch (error) {
-        return res.status(500).json({ message: "Internal Server Error" });
+        return res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 
+
+
 export const stopBot = async (req, res) => {
     try {
-        const data = await stopBotPolling()
-        console.log(data);
-        return res.status(200).json({ message: "Bot stopped successfully" })
+        stopBotPolling()
+        return res.status(200).json({ message: 'Bot has been successfully stopped.' });
     } catch (error) {
-        return res.status(500).json({ message: "Internal Server Error" });
+        return res.status(500).json({ message: 'Internal Server Error' });
     }
 }
 
 
-export const api = async (req, res) => {
+export const getApi = async (req, res) => {
     try {
-        const botAPI = await ApiKey.findOne({ service: "telegram" }).lean()
-        const weatherAPI = await ApiKey.findOne({ service: "weather" }).lean()
-        return res.render("api", { botAPI, weatherAPI })
+        const apiKey = await ApiKey.findOne({ type: "api-key" }).lean();
+        return res.status(200).render('api', { apiKey });
     } catch (error) {
-        return res.render('server-error', { pageTitle: 'server error' });
+        return res.status(500).render('server-error', { pageTitle: 'Internal Server Error' });
     }
-}
+};
+
 
 export const addAPIKeys = async (req, res) => {
     try {
-        const { botApi, weatherApi } = req.body
+        const { botApi, weatherApi, frequency } = req.body;
+
         if (!botApi) {
-            return res.status(400).json({ message: 'Please add the telegram bot API key' });
+            return res.status(400).json({ message: 'Please provide the Telegram bot API key.' });
         }
+
         if (!weatherApi) {
-            return res.status(400).json({ message: 'Please add the Weather API key' });
+            return res.status(400).json({ message: 'Please provide the Weather API key.' });
         }
 
-        const telegramKeyExist = await ApiKey.exists({ service: "telegram" })
-        if (telegramKeyExist) {
-            return res.status(400).json({ message: 'telegram key already exist, please  key' });
-        }
-        const weatherKeyExist = await ApiKey.exists({ service: "weather" })
-        if (weatherKeyExist) {
-            return res.status(400).json({ message: 'weather key already exist, please update the key' });
+        if (!frequency) {
+            return res.status(400).json({ message: 'Please provide the message frequency.' });
         }
 
-        const newAPIKeysData = [
-            {
-                service: "telegram",
-                key: botApi
-            },
-            {
-                service: "weather",
-                key: weatherApi
-            }
-        ];
+        if (frequency <= 0) {
+            return res.status(400).json({ message: 'Message frequency must be greater than zero.' });
+        }
 
-        await ApiKey.create(newAPIKeysData)
-        return res.status(201).json({ message: "API Keys added successfully " })
+        const apiKeyExist = await ApiKey.exists({ type: "api-key" });
+
+        if (apiKeyExist) {
+            return res.status(400).json({ message: 'API keys already exist. Please update the keys.' });
+        }
+
+        const newApiKey = new ApiKey({
+            telegram: botApi,
+            weather: weatherApi,
+            frequency: frequency
+        })
+
+        await newApiKey.save()
+        return res.status(201).json({ message: 'API Keys added successfully ' })
 
     } catch (error) {
         return res.status(500).json({ message: 'Internal Server Error' });
@@ -95,18 +91,88 @@ export const addAPIKeys = async (req, res) => {
 
 export const updateAPIKeys = async (req, res) => {
     try {
-        const { botApi, weatherApi } = req.body
-        if (!botApi) {
-            return res.status(400).json({ message: 'Please add the telegram bot API key' });
-        }
-        if (!weatherApi) {
-            return res.status(400).json({ message: 'Please add the Weather API key' });
-        }
-        await ApiKey.findOneAndUpdate({ service: "telegram" }, { key: botApi }, { new: true });
-        await ApiKey.findOneAndUpdate({ service: "weather" }, { key: weatherApi }, { new: true });
+        const { botApi, weatherApi, frequency } = req.body;
 
-        return res.status(200).json({ message: "API Keys updated successfully " })
+        if (!botApi) {
+            return res.status(400).json({ message: 'Please provide the Telegram bot API key.' });
+        }
+
+        if (!weatherApi) {
+            return res.status(400).json({ message: 'Please provide the Weather API key.' });
+        }
+
+        if (!frequency) {
+            return res.status(400).json({ message: 'Please provide the message frequency.' });
+        }
+
+        if (frequency <= 0) {
+            return res.status(400).json({ message: 'Message frequency must be greater than zero.' });
+        }
+
+        const apiKey = await ApiKey.findOne({ type: "api-key" });
+
+        if (!apiKey) {
+            return res.status(404).json({ message: 'API keys not found. Please add API keys before updating.' });
+        }
+
+        apiKey.telegram = botApi;
+        apiKey.weather = weatherApi;
+        apiKey.frequency = frequency;
+
+        await apiKey.save();
+
+        if (isBotRunning) {
+            try {
+                await stopBotPolling();
+            } catch (error) {
+                console.error("Error stopping the bot:", error);
+                return res.status(500).json({ message: 'Error stopping the bot.' });
+            }
+        }
+        try {
+            await startBotPolling(apiKey.telegram, apiKey.weather, apiKey.frequency);
+            return res.status(200).json({ message: 'API keys updated successfully, and bot started.' });
+        } catch (error) {
+            console.error("Error starting the bot:", error);
+            return res.status(500).json({ message: 'Error starting the bot.' });
+        }
     } catch (error) {
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(500).json({ message: 'Internal Server Error.' });
+    }
+};
+
+
+
+
+export const getUsers = async (req, res) => {
+    try {
+        const users = await User.find({}).lean()
+        return res.status(200).render('users', { pageTitle: 'users', users })
+    } catch (error) {
+        return res.status(500).render('server-error', { pageTitle: 'Internal Server Error' });
     }
 }
+
+export const toggleBlock = async (req, res) => {
+    try {
+        const actions = ['block', 'unblock'];
+        const { userId, action } = req.body;
+
+        if (!userId || !action || !actions.includes(action)) {
+            return res.status(400).json({ message: 'Required data is missing or invalid.' });
+        }
+
+        const user = await User.findOne({ userId });
+
+        if (!user) {
+            return res.status(400).json({ message: 'User not found.' });
+        }
+
+        user.block = action === 'block';
+        await user.save();
+
+        return res.status(200).json({ message: `User ${action}ed successfully.` });
+    } catch (error) {
+        return res.status(500).json({ message: 'Internal Server Error.' });
+    }
+};

@@ -1,13 +1,15 @@
-import express from "express";
-import { addAPIKeys, api, home, startBot, stopBot, updateAPIKeys } from "../controllers/admin.js";
-const adminRouter = express.Router();
+import express from 'express';
+import { addAPIKeys, getApi, getUsers, getHome, startBot, stopBot, toggleBlock, updateAPIKeys } from '../controllers/admin.js';
+const router = express.Router();
 
 // Define a route to render the index page
-adminRouter.get('/', home);
-adminRouter.get('/api', api);
-adminRouter.post("/add-apis", addAPIKeys)
-adminRouter.post("/update-apis", updateAPIKeys)
-adminRouter.post("/start-bot", startBot)
-adminRouter.post("/stop-bot", stopBot)
+router.get('/', getHome);
+router.get('/api', getApi);
+router.post('/api', addAPIKeys)
+router.put('/api', updateAPIKeys)
+router.post('/start-bot', startBot)
+router.post('/stop-bot', stopBot)
+router.get('/users', getUsers)
+router.put('/users/toggle-block', toggleBlock)
 
-export default adminRouter;
+export default router;

@@ -1,20 +1,27 @@
 <div class="api-keys-list-wrapper d-flex flex-column justify-content-center align-items-center mt-5">
     <div class="api-key d-flex flex-column mb-5">
         <div class="form-outline mb-2">
-            <label class="form-label">Bot API</label>
-            <input id="botApi" type="text" class="form-control" value="{{ botAPI.key }}" {{#unless botAPI.key}} {{else}}
-                disabled {{/unless}} />
+            <label class="form-label">Bot Key</label>
+            <input id="botApi" type="text" class="form-control" value="{{ apiKey.telegram }}" {{#unless
+                apiKey.telegram}} {{else}} disabled {{/unless}} />
 
         </div>
         <div class="form-outline mb-2">
-            <label class="form-label">Weather API</label>
-            <input id="weatherApi" type="text" class="form-control" value="{{ weatherAPI.key }}" {{#unless
-                weatherAPI.key}} {{else}} disabled {{/unless}} />
+            <label class="form-label">Weather key</label>
+            <input id="weatherApi" type="text" class="form-control" value="{{ apiKey.weather }}" {{#unless
+                apiKey.weather}} {{else}} disabled {{/unless}} />
         </div>
-        {{#if botAPI.key}}
-        <button class="btn btn-sm btn-secondary ml-3" onclick="toggleEdit('botApi', 'weatherApi')">Edit</button>
+        <div class="form-outline mb-2">
+            <label class="form-label">Message Frequency</label>
+            <input id="frequency" type="number" class="form-control" value="{{ apiKey.frequency }}" {{#unless
+                apiKey.frequency}} {{else}} disabled {{/unless}} />
+        </div>
+        {{#if apiKey}}
+        <button class="btn btn-sm btn-secondary ml-3"
+            onclick="toggleEdit('botApi', 'weatherApi','frequency')">Edit</button>
         {{else}}
-        <button class="btn btn-sm btn-primary ml-3" onclick="addAPIKeys(['botApi', 'weatherApi'])">Add</button>
+        <button class="btn btn-sm btn-primary ml-3"
+            onclick="addAPIKeys(['botApi', 'weatherApi','frequency'])">Add</button>
         {{/if}}
     </div>
 

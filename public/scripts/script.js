@@ -3,8 +3,7 @@ function startBOT() {
         url: '/start-bot',
         method: 'post',
         success: (response) => {
-            console.log("Success:", response);
-            // Display success alert using SweetAlert
+            console.log('Success:', response);
             Swal.fire({
                 icon: 'success',
                 title: response.message
@@ -17,8 +16,7 @@ function startBOT() {
             botButton.onclick = stopBOT;
         },
         error: (error) => {
-            console.error("Error:", error.responseJSON.message);
-            // Display error alert using SweetAlert
+            console.error('Error:', error.responseJSON.message);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -43,29 +41,45 @@ function addAPIKeys(inputIds) {
         return Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: "Please Add boat API Key",
+            text: 'Please add a valid API key for the bot.',
         });
     }
+
     if (!inputValues?.weatherApi) {
         return Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: "Please Add weather API Key",
+            text: 'Please add a valid API key for the weather service.',
         });
     }
+
+    if (!inputValues.frequency) {
+        return Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Please specify the message frequency.',
+        });
+    }
+
+    if (inputValues.frequency <= 0) {
+        return Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Message frequency must be greater than 0.',
+        });
+    }
+
     $.ajax({
-        url: '/add-apis',
+        url: '/api',
         method: 'post',
         data: inputValues,
         success: (response) => {
-            // Display success alert using SweetAlert
-            console.log(response);
             Swal.fire({
                 icon: 'success',
-                title: 'Bot started successfully',
+                title: 'Success',
                 text: response.message,
             }).then((result) => {
-                // Check if the user clicked the "OK" button
+                // Check if the user clicked the 'OK' button
                 if (result.isConfirmed || result.isDismissed) {
                     // Reload the page
                     window.location.reload();
@@ -89,22 +103,17 @@ function stopBOT() {
         url: '/stop-bot',
         method: 'post',
         success: (response) => {
-            console.log("Success:", response);
-            // Display success alert using SweetAlert
             Swal.fire({
                 icon: 'success',
-                title: response.message,
+                title: 'Success',
+                text: response.message,
             });
-
-            // Change button text, color, and behavior
             const botButton = document.getElementById('botButton');
             botButton.style.backgroundColor = 'green'
             botButton.innerText = 'START BOT';
             botButton.onclick = startBOT;
         },
         error: (error) => {
-            console.error("Error:", error.responseJSON.message);
-            // Display error alert using SweetAlert
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -122,6 +131,9 @@ function redirectToHome() {
     window.location.href = '/';
 }
 
+function redirectToUsers() {
+    window.location.href = '/users';
+}
 
 function toggleEdit(...inputIds) {
     // Create a variable to track the initial disabled state
@@ -156,39 +168,50 @@ function toggleEdit(...inputIds) {
 
     // You can now use the updatedValues object to access the edited values
     if (!hasEnabledInput) {
-        // User clicked "Update"
-        console.log('User clicked Update');
-        console.log('Updated values:', updatedValues);
+        // User clicked 'Update
 
         if (!updatedValues?.botApi) {
             return Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: "Please Add boat API Key",
+                text: 'Please add a valid API key for the bot.',
             });
         }
         if (!updatedValues?.weatherApi) {
             return Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: "Please Add weather API Key",
+                text: 'Please add a valid API key for the weather service.',
             });
         }
+
+        if (!updatedValues.frequency) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Please specify the message frequency.',
+            });
+        }
+
+        if (updatedValues.frequency <= 0) {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Message frequency must be greater than 0.',
+            });
+        }
+
         $.ajax({
-            url: '/update-apis',
-            method: 'post',
+            url: '/api',
+            method: 'put',
             data: updatedValues,
             success: (response) => {
-                // Display success alert using SweetAlert
-                console.log(response);
                 Swal.fire({
                     icon: 'success',
-                    title: 'Bot started successfully',
+                    title: 'Success',
                     text: response.message,
                 }).then((result) => {
-                    // Check if the user clicked the "OK" button
                     if (result.isConfirmed || result.isDismissed) {
-                        // Reload the page
                         window.location.reload();
                     }
                 });
@@ -203,4 +226,42 @@ function toggleEdit(...inputIds) {
         });
 
     }
+}
+
+function toggleBlock(userId, username) {
+    const button = document.querySelector(`button[data-user-id='${userId}']`);
+    const action = button?.innerText.toLowerCase()
+    if (!action) {
+        return console.log('No action');
+    }
+    Swal.fire({
+        title: action,
+        text: `Do you want to ${action} the user:${username}?`,
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Yes',
+        denyButtonText: `No`
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // 
+            $.ajax({
+                url: '/users/toggle-block',
+                method: 'put',
+                data: { userId, username, action },
+                success: (response) => {
+                    Swal.fire(response.message, '', 'success');
+                    if (button) {
+                        button.innerText = action === 'block' ? 'Unblock' : 'Block';
+                        button.classList.remove(action === 'block' ? 'btn-danger' : 'btn-success');
+                        button.classList.add(action === 'block' ? 'btn-success' : 'btn-danger');
+                    }
+                },
+                error: (error) => {
+                    Swal.fire(error.responseJSON.message, '', 'error');
+                }
+            })
+        } else if (result.isDenied) {
+            Swal.fire('Changes are not saved', '', 'info');
+        }
+    });
 }
