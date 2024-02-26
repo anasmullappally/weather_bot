@@ -3,7 +3,6 @@ function startBOT() {
         url: '/start-bot',
         method: 'post',
         success: (response) => {
-            console.log('Success:', response);
             Swal.fire({
                 icon: 'success',
                 title: response.message
@@ -16,7 +15,6 @@ function startBOT() {
             botButton.onclick = stopBOT;
         },
         error: (error) => {
-            console.error('Error:', error.responseJSON.message);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',

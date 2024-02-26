@@ -26,10 +26,6 @@ export const isCityExists = async (city, apiKey) => {
     }
 };
 
-// to capitalize First Letter Of EachWord
-export const capitalizeFirstLetterOfEachWord = (str) => {
-    return str.replace(/\b\w/g, (char) => char.toUpperCase());
-}
 
 export const getWeatherDetails = async (city, apiKey) => {
     if (!city || !apiKey) {

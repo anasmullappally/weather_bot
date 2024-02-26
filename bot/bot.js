@@ -1,7 +1,7 @@
 // bot.js
 import TelegramBot from 'node-telegram-bot-api';
 import { User } from '../model/User.js';
-import { capitalizeFirstLetterOfEachWord, getWeatherDetails, isCityExists, isValidCountry } from '../utils/weatherUtils.js';
+import { getWeatherDetails, isCityExists, isValidCountry } from '../utils/weatherUtils.js';
 import schedule from 'node-schedule'
 
 let bot
@@ -9,7 +9,6 @@ export let isBotRunning = false;
 
 
 export const startBotPolling = (telegramKey, weatherKey, frequency) => {
-    console.log(telegramKey, weatherKey, frequency);
     return new Promise((resolve, reject) => {
         if (!telegramKey) {
             reject(new Error('Telegram bot key is missing'));
@@ -34,7 +33,7 @@ export const startBotPolling = (telegramKey, weatherKey, frequency) => {
                 userStates.set(userId, { status: 'awaitingName' }); // Set initial state
                 bot.sendMessage(chatId, 'Welcome! What is your name?');
             } else if (existingUser.block) {
-                bot.sendMessage(chatId, 'You are blocked by the admin');
+                bot.sendMessage(chatId, 'You have been restricted by the administrator.');
             } else {
                 // If the user exists, send a different message or take other actions
                 bot.sendMessage(chatId, `Welcome back, ${existingUser.name}!`);
@@ -52,7 +51,7 @@ export const startBotPolling = (telegramKey, weatherKey, frequency) => {
                     case 'awaitingName':
                         // User is expected to provide their name
                         userStates.set(userId, { ...currentUser, status: 'awaitingCity', name: msg.text }); // Transition to the next state
-                        bot.sendMessage(chatId, `Great, ${msg.text}! What city are you from?`);
+                        bot.sendMessage(chatId, `Great, ${msg.text}! Could you share which city you're currently in?`);
                         break;
 
                     case 'awaitingCity':
@@ -64,7 +63,7 @@ export const startBotPolling = (telegramKey, weatherKey, frequency) => {
                             break;
                         }
                         userStates.set(userId, { ...currentUser, status: 'awaitingCountry', city: msg.text }); // Transition to the next state
-                        bot.sendMessage(chatId, `Awesome ${currentUser.name}! What country are you from?`);
+                        bot.sendMessage(chatId, `Awesome ${currentUser.name}! Can you tell me which country you're from?`);
                         break;
 
                     case 'awaitingCountry':
@@ -116,14 +115,14 @@ export const startBotPolling = (telegramKey, weatherKey, frequency) => {
             const chatId = msg.chat.id;
             const userId = msg.from.id;
 
-            const existingUser = await User.findOne({ userId }).select("city block").lean();
+            const existingUser = await User.findOne({ userId }).select('city block').lean();
 
             if (!existingUser) {
                 // If the user doesn't exist, start the conversation
                 userStates.set(userId, { status: 'awaitingName' }); // Set initial state
                 bot.sendMessage(chatId, 'Welcome! What is your name?');
             } else if (existingUser.block) {
-                bot.sendMessage(chatId, 'You are blocked by the admin');
+                bot.sendMessage(chatId, 'You have been restricted by the administrator.');
             } else {
                 const weatherDetails = await getWeatherDetails(existingUser.city, weatherKey);
                 if (weatherDetails) {
@@ -150,7 +149,7 @@ export const startBotPolling = (telegramKey, weatherKey, frequency) => {
         const interval = 24 / frequency; // Assuming frequency is a divisor of 24 hours
         // Schedule a job to send weather updates to registered users at regular intervals
         schedule.scheduleJob(`0 */${interval} * * *`, async () => {
-            const registeredUsers = await User.find({ block: false }).select("userId city").lean();
+            const registeredUsers = await User.find({ block: false }).select('userId city').lean();
 
             registeredUsers.forEach(async (user) => {
                 const weatherDetails = await getWeatherDetails(user.city, weatherKey);

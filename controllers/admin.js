@@ -112,7 +112,7 @@ export const updateAPIKeys = async (req, res) => {
         const apiKey = await ApiKey.findOne({ type: "api-key" });
 
         if (!apiKey) {
-            return res.status(404).json({ message: 'API keys not found. Please add API keys before updating.' });
+            return res.status(400).json({ message: 'API keys not found. Please add API keys before updating.' });
         }
 
         apiKey.telegram = botApi;
@@ -131,7 +131,7 @@ export const updateAPIKeys = async (req, res) => {
         }
         try {
             await startBotPolling(apiKey.telegram, apiKey.weather, apiKey.frequency);
-            return res.status(200).json({ message: 'API keys updated successfully, and bot started.' });
+            return res.status(200).json({ message: `API keys updated successfully, Bot restarted` });
         } catch (error) {
             console.error("Error starting the bot:", error);
             return res.status(500).json({ message: 'Error starting the bot.' });
