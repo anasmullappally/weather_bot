@@ -4,7 +4,7 @@ import { User } from '../model/User.js';
 import { getWeatherDetails, isCityExists, isValidCountry } from '../utils/weatherUtils.js';
 import schedule from 'node-schedule'
 
-let bot
+let bot, job
 export let isBotRunning = false;
 
 
@@ -145,10 +145,10 @@ export const startBotPolling = (telegramKey, weatherKey, frequency) => {
             }
         });
 
-
-        const interval = 24 / frequency; // Assuming frequency is a divisor of 24 hours
+        const timesPerDay = frequency; // Number of times the job should run in a day
+        const interval = Math.round(24 * 60 / timesPerDay); // Calculate the interval dynamically
         // Schedule a job to send weather updates to registered users at regular intervals
-        schedule.scheduleJob(`0 */${interval} * * *`, async () => {
+        job = schedule.scheduleJob(`*/${interval} * * * *`, async () => {
             const registeredUsers = await User.find({ block: false }).select('userId city').lean();
 
             registeredUsers.forEach(async (user) => {
@@ -191,6 +191,7 @@ export const startBotPolling = (telegramKey, weatherKey, frequency) => {
 
 export const stopBotPolling = () => {
     if (bot) {
+        if (job) job.cancel();
         bot.stopPolling();
         isBotRunning = false;
         return 'bot stopped'
